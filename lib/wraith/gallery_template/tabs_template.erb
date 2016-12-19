@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.4.0/css/font-awesome.min.css">
+  <style type="text/css">
+    body {
+      position: relative;
+      float: left;
+      width: 100%;
+    }
+
+    .prev {
+      margin-left: -10px;
+      margin-right: 10px;
+    }
+
+    .next,
+    .prev {
+      cursor: pointer;
+      background-color: #e7e7e7;
+      border: 2px solid #eee;
+      height: 400px;
+      margin-top: 60px;
+    }
+
+    .prev span:before,
+    .next span:before {
+      font-size: 35px;
+      padding: 10px;
+      display: block;
+      font-family: "FontAwesome";
+      margin-top: 165px;
+      display: block;
+    }
+
+    .prev span:before {
+      content: "\f0d9";
+    }
+
+    .next span:before {
+      content: "\f0da";
+    }
+
+    .page-list {
+      max-height: 400px;
+      overflow-y: scroll;
+    }
+
+    .page-list > li > a {
+      padding: 1rem 1rem 0 0;
+    }
+
+    .page-list > li small {
+      padding-left: 1rem;
+    }
+
+    .img-thumbnail {
+      max-height: 500px;
+    }
+
+    .list-group-item.checked a:after {
+      color: #23e343;
+    }
+
+    .list-group-item a span {
+      word-wrap: break-word;
+      width: 95%;
+      display: block;
+    }
+
+    .list-group-item a:after {
+      content: "\f00c";
+      font-family: "FontAwesome";
+      color: #eae6e6;
+      position: absolute;
+      right: 10px;
+      top: 10px;
+    }
+
+    .checked a {
+      color: #000;
+    }
+
+    .current {
+      background-color: #e7e7e7;
+    }
+
+    .threshold {
+      color: red;
+    }
+
+    .compare {
+      cursor: pointer;
+      margin-left: 20px;
+    }
+
+    .compare:before {
+      font-family: "FontAwesome";
+      content: "\f0c5";
+      font-size: 30px;
+    }
+
+    .compare-modal {
+      position: fixed;
+      margin: 0;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.7);
+      overflow: scroll;
+      z-index: 1000;
+    }
+
+    .compare-container {
+      padding-bottom: 300px;
+      z-index: 1000;
+      margin-top: 20px;
+      text-align: center;
+    }
+
+    .compare-container img {
+      margin-right: 20px;
+      max-width: 30%;
+    }
+
+    .search {
+      width: 100%;
+      margin-bottom: 1rem !important;
+    }
+  </style>
+  <script type="text/javascript">
+    $(function () {
+      $('.shot').unbind().on('click', function (e) {
+        e.preventDefault();
+        var url = $(this).attr('href');
+        window.open(url, '_blank');
+      })
+
+      $('.compare').unbind().on('click', function () {
+        var slide = $(this).closest(".slide"),
+            newImage = slide.find('a.shot:eq(0)').attr('href'),
+            oldImage = slide.find('a.shot:eq(1)').attr('href'),
+            diffImage = slide.find('a.shot:eq(2)').attr('href');
+        $('.container').append('<div class="compare-modal"><div class="compare-container"><img src="' + newImage + '"/><img src="' + oldImage + '"/><img src="' + diffImage + '"/></div></div>');
+        $('.compare-modal').unbind().on('click', function () {
+          $(this).remove();
+        })
+      })
+    })
+  </script>
+  <script type="text/javascript">
+    $(document).ready(function () {
+      $(".search").keyup(function () {
+        var searchTerm = $(".search").val().toLowerCase();
+        var items = $('.page-list li');
+
+        items.each(function (index) {
+          if ($(this).text().toLowerCase().includes(searchTerm)) {
+            $(this).addClass('visible');
+            $(this).removeClass('hidden');
+          }
+          else {
+            $(this).addClass('hidden');
+            $(this).removeClass('visible');
+          }
+        });
+
+        updatePagesCount();
+      });
+
+      $(".size-filter").click(function () {
+        var selector = $(this).data('size');
+        $("." + selector).toggleClass('hidden');
+        $("." + selector).toggleClass('visible');
+      });
+
+      $(".changed-only-filter-label").text(
+          'Display changed only (' + $(".page-list >li.changed").length +
+          ' out of ' + $(".page-list >li").length + ')');
+
+      $(".changed-only-filter").click(function () {
+        $(".page-list >li.unchanged").toggleClass('hidden');
+      });
+
+      function updatePagesCount() {
+        var jobCount = $('.page-list li.visible').length;
+        $('.counter').text(jobCount + ' pages found.');
+      }
+
+      updatePagesCount();
+
+      function activateResolutionTab() {
+        $('.page-list >li >a').on('shown.bs.tab', function (e) {
+          $(e.target.hash).find('li.visible a:first').tab('show');
+        });
+      }
+
+      activateResolutionTab();
+
+
+      function handleKeyboardEvents() {
+        $("body").keypress(function (event) {
+          var elm;
+          if (event.key == "ArrowUp") {
+            elm = $('.page-list >li.active').prev().find('a');
+          } else if (event.key == "ArrowDown") {
+            elm = $('.page-list >li.active').next().find('a');
+          } else {
+            return
+          }
+
+          elm.click();
+        });
+      }
+
+      handleKeyboardEvents();
+
+    });
+  </script>
+</head>
+<body>
+<div class="container">
+  <div class="row">
+    <div class="col-sm-12 col-md-3">
+
+      <div class="page-header">
+        <h4>List of screenshots
+          <small>taken <%= Time.now.strftime('%Y/%m/%d %H:%M:%S') %></small>
+        </h4>
+        <small>
+          Display resolution:<br/>
+          <% directories.values.first.to_a.sort.each do |size, _| %>
+              <input type="checkbox" checked class="size-filter" data-size="size-<%= size %>"> <%= size %>
+          <% end %>
+          <br/>
+          <span class="changed-only-filter-label">Display changes only</span>
+          <input type="checkbox" class="changed-only-filter">
+
+        </small>
+        <div class="search-box">
+          <small>Search for pages:</small>
+          <input type="text" class="search form-control" placeholder="Type to search...">
+          <div class="counter">pages</div>
+        </div>
+      </div>
+
+      <ul class="page-list nav nav-pills nav-stacked">
+        <% directories.each do |dir, sizes| %>
+            <% diff_sum = sizes.to_a.inject(0) { |memo, (size, files)| memo += files[:data].to_f } %>
+            <li <%= "class='#{diff_sum > 0 ? 'changed' : 'unchanged'}'" %> data-diff_sum="<%= diff_sum %>">
+              <a data-toggle="pill" href="#<%= dir %>"><span>/<%= dir.gsub('__', '/') %></span></a>
+              <small>Diffs:
+                <% sizes.to_a.sort.each do |size, files| %>
+                    <span class="diff" data-diff="<%= files[:data] %>"><%= files[:data] %>
+                      ,&nbsp;</span>
+                <% end %>
+              </small>
+            </li>
+        <% end %>
+      </ul>
+
+    </div>
+
+    <div class="col-sm-12 col-md-9">
+      <div class="pages tab-content">
+        <% directories.each do |dir, sizes| %>
+            <div class="tab-pane fade" id="<%= dir %>">
+              <ul class="nav nav-pills">
+                <% sizes.to_a.sort.each do |size, _| %>
+                    <li class="size-<%= size %> visible">
+                      <a data-toggle="pill" href="#<%= dir+size.to_s %>"><%= size %></a></li>
+                <% end %>
+              </ul>
+              <div class="tab-content">
+                <% sizes.to_a.sort.each do |size, files| %>
+                    <div id="<%= dir+size.to_s %>" class="size-<%= size %> slide tab-pane fade <%= dir %>">
+                      <a class="path" name="<%= dir %>"></a>
+                      <div class="col-sm-12 text-center">
+                        <% if threshold.nil? %>
+                            <h4><%= size %>px - /<%= dir.gsub('__', '/') %></h4>
+                        <% else %>
+                            <% if files[:data].to_i > threshold %>
+                                <h4><%= size %>px - /<%= dir.gsub('__', '/') %></h4>
+                            <% else %>
+                                <h4><%= size %>px - /<%= dir.gsub('__', '/') %></h4>
+                            <% end %>
+                        <% end %>
+                      </div>
+                      <div class="difference col-sm-12">
+                        <% if threshold.nil? %>
+                            <h4 class="text-center text-muted"><%= files[:data] %> %
+                              different<span class="compare"></span></h4>
+                        <% else %>
+                            <% if files[:data].to_i > threshold %>
+                                <h4 class="text-center threshold"><%= files[:data] %> %
+                                  different<span class="compare"></span></h4>
+                            <% else %>
+                                <h4 class="text-center text-muted"><%= files[:data] %> %
+                                  different<span class="compare"></span></h4>
+                            <% end %>
+                        <% end %>
+                      </div>
+                      <% files[:variants].each do |file| %>
+                          <div class="col-sm-4">
+                            <p class="text">
+                              <a target="_blank" href="<%= file[:url] %>"><%= file[:name] %></a></p>
+                            <a class="shot" href="<%= file[:filename] %>">
+                              <img class="short-screenshot img-thumbnail" src="<%= path %><%= file[:thumb] %>">
+                            </a>
+                          </div>
+                      <% end %>
+                      <div class="col-sm-4">
+                        <% if files[:diff] %>
+                            <p class="text">diff</p>
+                            <a class="shot" href="<%= files[:diff][:filename] %>">
+                              <img class="short-screenshot img-thumbnail" src="<%= path %><%= files[:diff][:thumb] %>">
+                            </a>
+                        <% end %>
+                      </div>
+                    </div>
+                <% end %>
+              </div>
+            </div>
+        <% end %>
+      </div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>
