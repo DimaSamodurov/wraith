@@ -12,38 +12,6 @@
       width: 100%;
     }
 
-    .prev {
-      margin-left: -10px;
-      margin-right: 10px;
-    }
-
-    .next,
-    .prev {
-      cursor: pointer;
-      background-color: #e7e7e7;
-      border: 2px solid #eee;
-      height: 400px;
-      margin-top: 60px;
-    }
-
-    .prev span:before,
-    .next span:before {
-      font-size: 35px;
-      padding: 10px;
-      display: block;
-      font-family: "FontAwesome";
-      margin-top: 165px;
-      display: block;
-    }
-
-    .prev span:before {
-      content: "\f0d9";
-    }
-
-    .next span:before {
-      content: "\f0da";
-    }
-
     .page-list {
       max-height: 400px;
       overflow-y: scroll;
@@ -82,10 +50,6 @@
 
     .checked a {
       color: #000;
-    }
-
-    .current {
-      background-color: #e7e7e7;
     }
 
     .threshold {
@@ -131,14 +95,96 @@
       width: 100%;
       margin-bottom: 1rem !important;
     }
+
+    .diff_range, .diff_range_label {
+      display: inline;
+    }
   </style>
+
   <script type="text/javascript">
-    $(function () {
+    function toggle_visibility(selector, value) {
+      if (value) {
+        $(selector).removeClass('hidden').addClass('visible');
+      } else {
+        $(selector).addClass('hidden').removeClass('visible');
+      }
+    }
+
+    function updatePagesCount() {
+      var jobCount = $('.page-list li.visible').length;
+      $('.counter').text(jobCount + ' pages found.');
+    }
+
+    function activateResolutionTab() {
+      $('.page-list >li >a').on('shown.bs.tab', function (e) {
+        $(e.target.hash).find('li.visible a:first').tab('show');
+      });
+    }
+
+    function handleKeyboardEvents() {
+      $("body").keypress(function (event) {
+        var elm;
+        if (event.key == "ArrowUp") {
+          elm = $('.page-list >li.active').prevAll('.visible:first').find('a');
+        } else if (event.key == "ArrowDown") {
+          elm = $('.page-list >li.active').nextAll('.visible:first').find('a');
+        } else {
+          return
+        }
+        elm.click();
+      });
+    }
+
+    function apply_filter() {
+      reset_visibility();
+      apply_search_filter();
+      apply_diff_range_filter();
+      apply_resolution_filter();
+      updatePagesCount();
+    }
+
+    function reset_visibility() {
+      $('.page-list li').each(function () {
+        $(this).removeClass('hidden').addClass('visible');
+      });
+    }
+
+    function apply_resolution_filter() {
+      $(".size-filter").each(function () {
+        var selector = $(this).data('size');
+        toggle_visibility("." + selector, this.checked);
+      });
+    }
+
+    function apply_search_filter() {
+      var searchTerm = $(".search").val().toLowerCase();
+      var items = $('.page-list li.visible');
+
+      items.each(function (index) {
+        toggle_visibility(this, $(this).text().toLowerCase().includes(searchTerm))
+      });
+    }
+
+    function apply_diff_range_filter() {
+      var value = parseFloat($('.diff_range').val());
+      $(".diff_range_label").val(value);
+
+      var items = $('.page-list li.visible');
+      items.each(function (index) {
+        var visible = $(this).find('.diff').filter(function () {
+              return parseFloat($(this).data('diff')) >= value
+            }).length != 0;
+
+        toggle_visibility(this, visible);
+      });
+    }
+
+    $(document).ready(function () {
       $('.shot').unbind().on('click', function (e) {
         e.preventDefault();
         var url = $(this).attr('href');
         window.open(url, '_blank');
-      })
+      });
 
       $('.compare').unbind().on('click', function () {
         var slide = $(this).closest(".slide"),
@@ -149,76 +195,15 @@
         $('.compare-modal').unbind().on('click', function () {
           $(this).remove();
         })
-      })
-    })
-  </script>
-  <script type="text/javascript">
-    $(document).ready(function () {
-      $(".search").keyup(function () {
-        var searchTerm = $(".search").val().toLowerCase();
-        var items = $('.page-list li');
-
-        items.each(function (index) {
-          if ($(this).text().toLowerCase().includes(searchTerm)) {
-            $(this).addClass('visible');
-            $(this).removeClass('hidden');
-          }
-          else {
-            $(this).addClass('hidden');
-            $(this).removeClass('visible');
-          }
-        });
-
-        updatePagesCount();
       });
 
-      $(".size-filter").click(function () {
-        var selector = $(this).data('size');
-        $("." + selector).toggleClass('hidden');
-        $("." + selector).toggleClass('visible');
-      });
+      $(".search").on('keyup', apply_filter);
+      $(".size-filter").on('click', apply_filter);
+      $('.diff_range').on('change', apply_filter);
 
-      $(".changed-only-filter-label").text(
-          'Display changed only (' + $(".page-list >li.changed").length +
-          ' out of ' + $(".page-list >li").length + ')');
-
-      $(".changed-only-filter").click(function () {
-        $(".page-list >li.unchanged").toggleClass('hidden');
-      });
-
-      function updatePagesCount() {
-        var jobCount = $('.page-list li.visible').length;
-        $('.counter').text(jobCount + ' pages found.');
-      }
-
-      updatePagesCount();
-
-      function activateResolutionTab() {
-        $('.page-list >li >a').on('shown.bs.tab', function (e) {
-          $(e.target.hash).find('li.visible a:first').tab('show');
-        });
-      }
-
+      apply_filter();
       activateResolutionTab();
-
-
-      function handleKeyboardEvents() {
-        $("body").keypress(function (event) {
-          var elm;
-          if (event.key == "ArrowUp") {
-            elm = $('.page-list >li.active').prev().find('a');
-          } else if (event.key == "ArrowDown") {
-            elm = $('.page-list >li.active').next().find('a');
-          } else {
-            return
-          }
-
-          elm.click();
-        });
-      }
-
       handleKeyboardEvents();
-
     });
   </script>
 </head>
@@ -232,14 +217,16 @@
           <small>taken <%= Time.now.strftime('%Y/%m/%d %H:%M:%S') %></small>
         </h4>
         <small>
+
           Display resolution:<br/>
           <% directories.values.first.to_a.sort.each do |size, _| %>
               <input type="checkbox" checked class="size-filter" data-size="size-<%= size %>"> <%= size %>
           <% end %>
           <br/>
-          <span class="changed-only-filter-label">Display changes only</span>
-          <input type="checkbox" class="changed-only-filter">
-
+          Display samples with difference above
+          <output class="diff_range_label" for="diff_range">0</output>
+          %
+          <input name="diff_range" class="diff_range" type="range" min="0" max="100" step="0.1" value="0">
         </small>
         <div class="search-box">
           <small>Search for pages:</small>
